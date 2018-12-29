@@ -96,14 +96,14 @@ QBittorrent.prototype.login = function(cb) {
 }
 
 QBittorrent.prototype.getTorrents = function(cb) {
-    this.getJson('api/v2/torrents/info', {}, (err, res, body) => {
+    this.getJson('query/torrents', {}, (err, res, body) => {
         console.log(body)
         cb(arguments)
     })
 }
 
 QBittorrent.prototype.syncMaindata = function(cb) {
-    this.getJson('api/v2/sync/maindata', {qs: {rid: this.rid}}, (err, res, body) => {
+    this.getJson('sync/maindata', {qs: {rid: this.rid}}, (err, res, body) => {
         this.rid = (body && body.rid || 0)
         cb(arguments)
     })
@@ -118,7 +118,7 @@ QBittorrent.prototype.addTorrentFile = function(filepath, options, cb) {
         Object.assign(formData, options)
     }
 
-    this.post('api/v2/torrents/add', {formData}, cb)
+    this.post('command/upload', {formData}, cb)
 }
 
 QBittorrent.prototype.addTorrentURL = function(magneturl, options, cb) {
@@ -130,71 +130,77 @@ QBittorrent.prototype.addTorrentURL = function(magneturl, options, cb) {
         Object.assign(formData, options)
     }
 
-    this.post('api/v2/torrents/add', {formData}, cb)
+    this.post('command/download', {formData}, cb)
 }
 
-QBittorrent.prototype.performGetAction = function(action, hashes, queries, cb) {
+QBittorrent.prototype.performGetAction = function(action, hashes, qs, cb) {
     hashes = Array.isArray(hashes) ? hashes : [hashes]
-    let qs = Object.assign({
+    qs = Object.assign({
         hashes: hashes.join('|')
     }, queries)
-    this.get('api/v2/torrents/' + action, {qs}, this.handleError(cb, TORRENT_ERRORS))
+    this.get('command/' + action, {qs}, this.handleError(cb, TORRENT_ERRORS))
 }
 
 QBittorrent.prototype.performPostAction = function(action, hashes, form, cb) {
     hashes = Array.isArray(hashes) ? hashes : [hashes]
-    let formData = Object.assign({
+    form = Object.assign({
         hashes: hashes.join('|')
     }, form)
-    this.post('api/v2/torrents/' + action, {formData}, this.handleError(cb, TORRENT_ERRORS))
+    this.post('command/' + action, {form}, this.handleError(cb, TORRENT_ERRORS))
+}
+
+QBittorrent.prototype.performMultiPostAction = function(action, hashes, form, cb) {
+    hashes = Array.isArray(hashes) ? hashes : [hashes]
+    let counter = 0
+    for (let hash of hashes) {
+        let hashform = Object.assign({hash}, form)
+        this.post('command/' + action, {form: hashform}, this.handleError(() => {
+            counter++
+            if (hashes.length === counter) {
+                cb(...arguments)
+            }
+        }, TORRENT_ERRORS))
+    }
 }
 
 QBittorrent.prototype.pause = function(hashes, cb) {
-    this.performGetAction('pause', hashes, {}, cb)
+    this.performMultiPostAction('pause', hashes, {}, cb)
 }
 
 QBittorrent.prototype.resume = function(hashes, cb) {
-    this.performGetAction('resume', hashes, {}, cb)
+    this.performMultiPostAction('resume', hashes, {}, cb)
 }
 
 QBittorrent.prototype.delete = function(hashes, cb) {
-    this.performGetAction('delete', hashes, {}, cb)
+    this.performPostAction('delete', hashes, {}, cb)
 }
 
 QBittorrent.prototype.deleteAndRemove = function(hashes, cb) {
-    this.performGetAction('delete', hashes, {deleteFiles: 'true'}, cb)
+    this.performPostAction('deletePerm', hashes, {}, cb)
 }
 
 QBittorrent.prototype.recheck = function(hashes, cb) {
-    this.performGetAction('recheck', hashes, {}, cb)
-}
-
-QBittorrent.prototype.reannounce = function(hashes, cb) {
-    this.performGetAction('reannounce', hashes, {}, cb)
-}
-
-QBittorrent.prototype.reannounce = function(hashes, cb) {
-    this.performGetAction('reannounce', hashes, {}, cb)
+    this.performMultiPostAction('recheck', hashes, {}, cb)
 }
 
 QBittorrent.prototype.increasePrio = function(hashes, cb) {
-    this.performGetAction('increasePrio', hashes, {}, cb)
+    this.performPostAction('increasePrio', hashes, {}, cb)
 }
 
 QBittorrent.prototype.decreasePrio = function(hashes, cb) {
-    this.performGetAction('decreasePrio', hashes, {}, cb)
+    this.performPostAction('decreasePrio', hashes, {}, cb)
 }
 
 QBittorrent.prototype.topPrio = function(hashes, cb) {
-    this.performGetAction('topPrio', hashes, {}, cb)
+    this.performPostAction('topPrio', hashes, {}, cb)
 }
 
 QBittorrent.prototype.bottomPrio = function(hashes, cb) {
-    this.performGetAction('bottomPrio', hashes, {}, cb)
+    this.performPostAction('bottomPrio', hashes, {}, cb)
 }
 
 QBittorrent.prototype.rename = function(hash, name, cb) {
-    this.performPostAction('rename', hash, {name}, cb)
+    this.performMultiPostAction('rename', hash, {name}, cb)
 }
 
 QBittorrent.prototype.setCategory = function(hashes, category, cb) {
@@ -206,33 +212,28 @@ QBittorrent.prototype.setLocation = function(hashes, location, cb) {
 }
 
 QBittorrent.prototype.createCategory = function(category, cb) {
-    this.post('api/v2/torrents/createCategory', {formData: {category}}, cb)
-}
-
-QBittorrent.prototype.editCategory = function(category, savePath, cb) {
-    this.post('api/v2/torrents/editCategory', {formData: {category, savePath}}, cb)
+    this.post('command/addCategory', {form: {category}}, cb)
 }
 
 QBittorrent.prototype.removeCategories = function(categories, savePath, cb) {
     categories = Array.isArray(categories) ? categories : [categories]
-    this.post('api/v2/torrents/removeCategories', {
-        formData: {
+    this.post('command/removeCategories', {
+        form: {
             categories: categories.join('\n'),
-            savePath: savePath
         }
     }, cb)
 }
 
 QBittorrent.prototype.setAutoManagement = function(hashes, enable, cb) {
-    this.performPostAction('setAutoManagement', hashes, {enable}, cb)
+    this.performPostAction('setAutoTMM', hashes, {enable}, cb)
 }
 
 QBittorrent.prototype.toggleSequentialDownload = function(hashes, cb) {
-    this.performGetAction('toggleSequentialDownload', hashes, {}, cb)
+    this.performPostAction('toggleSequentialDownload', hashes, {}, cb)
 }
 
 QBittorrent.prototype.toggleFirstLastPiecePrio = function(hashes, cb) {
-    this.performGetAction('toggleFirstLastPiecePrio', hashes, {}, cb)
+    this.performPostAction('toggleFirstLastPiecePrio', hashes, {}, cb)
 }
 
 QBittorrent.prototype.setForceStart = function(hashes, value, cb) {
