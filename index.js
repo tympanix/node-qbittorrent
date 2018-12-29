@@ -167,8 +167,16 @@ QBittorrent.prototype.pause = function(hashes, cb) {
     this.performMultiPostAction('pause', hashes, {}, cb)
 }
 
+QBittorrent.prototype.pauseAll = function(cb) {
+    this.post('command/pauseAll', {}, cb)
+}
+
 QBittorrent.prototype.resume = function(hashes, cb) {
     this.performMultiPostAction('resume', hashes, {}, cb)
+}
+
+QBittorrent.prototype.resumeAll = function(cb) {
+    this.post('command/resumeAll', {}, cb)
 }
 
 QBittorrent.prototype.delete = function(hashes, cb) {
