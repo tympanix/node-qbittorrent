@@ -1,6 +1,6 @@
 {
   "name": "@electorrent/node-qbittorrent",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A client implementation of qBittorrent WebAPI",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "qbittorrent",
     "api"
   ],
-  "author": "",
+  "author": "tympanix <tympanix@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "request": "^2.88.0"
@@ -18,5 +18,13 @@
   "devDependencies": {
     "dotenv": "^6.2.0",
     "request-debug": "^0.2.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tympanix/node-qbittorrent.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tympanix/node-qbittorrent/issues"
+  },
+  "homepage": "https://github.com/tympanix/node-qbittorrent#readme"
 }
