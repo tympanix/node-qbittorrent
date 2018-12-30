@@ -97,6 +97,11 @@ QBittorrent.prototype.login = function(cb) {
     }.bind(this))
 }
 
+QBittorrent.prototype.reset = function(cb) {
+    this.rid = 0
+    cb()
+}
+
 QBittorrent.prototype.getTorrents = function(cb) {
     this.getJson('query/torrents', {}, this.handleError(cb))
 }
