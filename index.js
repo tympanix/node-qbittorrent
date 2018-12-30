@@ -1,5 +1,6 @@
 const request = require('request')
 const url = require('url')
+const path = require('path')
 const fs = require('fs')
 
 
@@ -45,6 +46,8 @@ QBittorrent.prototype.handleError = function(cb, errors) {
             return cb(err, body)
         } else if (errors && errors.hasOwnProperty(res.statusCode)) {
             return cb(errors[res.statusCode], body)
+        } else if (body && body === 'Fails.') {
+            return cb(new Error('Request failed'))
         } else {
             return cb(err, body)
         }
@@ -106,8 +109,32 @@ QBittorrent.prototype.syncMaindata = function(cb) {
 }
 
 QBittorrent.prototype.addTorrentFile = function(filepath, options, cb) {
+    let data
+
+    try {
+        data = fs.readFileSync(filepath);
+    } catch (err) {
+        return cb(err)
+    }
+
+    let filename = path.basename(filepath)
+
+    this.addTorrentFileContent(data, filename, options, cb)
+}
+
+QBittorrent.prototype.addTorrentFileContent = function(content, filename, options, cb) {
+    if (!Buffer.isBuffer(content)) {
+        content = Buffer.from(content)
+    }
+
     let formData = {
-        torrents: fs.createReadStream(filepath),
+        torrents: {
+            value: content,
+            options: {
+                filename: filename,
+                contentType: 'application/x-bittorrent',
+            }
+        },
     }
 
     if (typeof options === 'object') {
