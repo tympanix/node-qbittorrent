@@ -90,7 +90,7 @@ QBittorrent.prototype.login = function(cb) {
         username: this.user,
         password: this.pass,
     }}, function(err, res) {
-        if (!res.headers.hasOwnProperty('set-cookie')) {
+        if (res && !res.headers.hasOwnProperty('set-cookie')) {
             err = new Error('Invalid login')
         }
         this.handleError(cb, AUTH_ERRORS)(...arguments)
