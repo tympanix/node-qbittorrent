@@ -16,7 +16,6 @@ function QBittorrent(option) {
 
     this.baseurl = new url.URL(this.host, 'http://' + this.host)
     this.baseurl.port = this.port
-    this.baseurl.pathname = this.path
 
     this.rid = 0 /* used for syncing data */
 
@@ -54,8 +53,8 @@ QBittorrent.prototype.handleError = function(cb, errors) {
     }
 }
 
-QBittorrent.prototype.url = function(path) {
-    return url.resolve(this.baseurl.toString(), path)
+QBittorrent.prototype.url = function(name) {
+    return url.resolve(this.baseurl.toString(), path.join(this.path, name))
 }
 
 QBittorrent.prototype.http = function(method, path, options, cb) {
