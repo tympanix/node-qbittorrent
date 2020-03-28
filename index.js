@@ -71,7 +71,7 @@ QBittorrent.prototype.addTorrentFile = function(filepath, options, cb) {
     this.api.addTorrentFile(filepath, options, cb)
 }
 
-ApiV2.prototype.addTorrentFileContent = function(content, filename, options, cb) {
+QBittorrent.prototype.addTorrentFileContent = function(content, filename, options, cb) {
     this.api.addTorrentFileContent(content, filename, options, cb)
 }
 
