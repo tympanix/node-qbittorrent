@@ -5,7 +5,7 @@ const request = require('request')
 
 
 function ApiV2(option) {
-    this.path = option.path + 'api/v2/'
+    this.path = option.path
     this.user = option.user
     this.pass = option.pass
     this.ca   = option.ca
@@ -49,7 +49,7 @@ ApiV2.prototype.handleError = function(cb, errors) {
 }
 
 ApiV2.prototype.url = function(name) {
-    return url.resolve(this.baseurl.toString(), path.join(this.path, name))
+    return url.resolve(this.baseurl.toString(), path.join(this.path, "api/v2", name))
 }
 
 ApiV2.prototype.http = function(method, path, options, cb) {
