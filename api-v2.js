@@ -31,7 +31,7 @@ const AUTH_ERRORS = {
 }
 
 const TORRENT_ERRORS = {
-    404: new Error('Torrent hash was not found'),  
+    404: new Error('Torrent hash was not found'),
 }
 
 ApiV2.prototype.handleError = function(cb, errors) {
@@ -79,6 +79,31 @@ ApiV2.prototype.post = function(path, options, cb) {
     this.http('POST', path, options, cb)
 }
 
+ApiV2.prototype.apiVersion = function(cb) {
+    this.get('app/version', {}, function(err, res) {
+        if (res.statusCode === 200) {
+            cb(null, res.body)
+        } else {
+            cb(new Error("Could not get api version"), null)
+        }
+    }.bind(this))
+}
+
+ApiV2.prototype.monkeyPatchApiVersion = function(cb) {
+    this.apiVersion(function (err, versionStr) {
+        if (err) {
+            return cb(err, null)
+        }
+        const versionParts = versionStr.replace('v', '').split('.').map(Number)
+        const versionMajor = versionParts[0]
+        if (versionMajor >= 5) {
+            // Apply patch for API v5.0.0 and above
+            Object.assign(this, ApiV2MonkeyPatch5.prototype)
+        }
+        cb(null, versionStr)
+    }.bind(this))
+}
+
 ApiV2.prototype.login = function(cb) {
     this.post('auth/login', {form: {
         username: this.user,
@@ -87,7 +112,9 @@ ApiV2.prototype.login = function(cb) {
         if (res && !res.headers.hasOwnProperty('set-cookie')) {
             err = new Error('Invalid login')
         }
-        this.handleError(cb, AUTH_ERRORS)(...arguments)
+        this.monkeyPatchApiVersion((err, version) => {
+            this.handleError(cb, AUTH_ERRORS)(...arguments)
+        })
     }.bind(this))
 }
 
@@ -250,6 +277,28 @@ ApiV2.prototype.setForceStart = function(hashes, value, cb) {
 
 ApiV2.prototype.setSuperSeeding = function(hashes, value, cb) {
     this.performPostAction('setSuperSeeding', hashes, {value}, cb)
+}
+
+
+/**
+ * This prototype patch adds support for qBittorrent v5.0.0 and above
+ */
+function ApiV2MonkeyPatch5() {}
+
+ApiV2MonkeyPatch5.prototype.pause = function(hashes, cb) {
+    this.performPostAction('stop', hashes, {}, cb)
+}
+
+ApiV2MonkeyPatch5.prototype.pauseAll = function(cb) {
+    this.performPostAction('stop', 'all', {}, cb)
+}
+
+ApiV2MonkeyPatch5.prototype.resume = function(hashes, cb) {
+    this.performPostAction('start', hashes, {}, cb)
+}
+
+ApiV2MonkeyPatch5.prototype.resumeAll = function(cb) {
+    this.performPostAction('start', 'all', {}, cb)
 }
 
 module.exports = ApiV2
