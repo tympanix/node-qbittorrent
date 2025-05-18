@@ -81,7 +81,9 @@ ApiV2.prototype.post = function(path, options, cb) {
 
 ApiV2.prototype.apiVersion = function(cb) {
     this.get('app/version', {}, function(err, res) {
-        if (res.statusCode === 200) {
+        if (err) {
+            return cb(err, null)
+        } else if (res.statusCode === 200) {
             cb(null, res.body)
         } else {
             cb(new Error("Could not get api version"), null)
