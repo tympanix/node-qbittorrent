@@ -34,6 +34,10 @@ const TORRENT_ERRORS = {
     404: new Error('Torrent hash was not found'),
 }
 
+function isSuccessfulStatusCode(statusCode) {
+    return statusCode >= 200 && statusCode < 300
+}
+
 ApiV2.prototype.handleError = function(cb, errors) {
     return function(err, res, body) {
         if (err) {
@@ -59,7 +63,7 @@ ApiV2.prototype.http = function(method, path, options, cb) {
     }, options), function(err, res, body) {
         if (err) {
             cb(...arguments)
-        } else if (res && res.statusCode !== 200) {
+        } else if (res && !isSuccessfulStatusCode(res.statusCode)) {
             cb(new Error(res.statusCode), ...Array.from(arguments).slice(1))
         } else {
             cb(...arguments)
